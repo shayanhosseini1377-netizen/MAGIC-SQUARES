@@ -1,0 +1,2199 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مُهرِ جادو — Magic Square Quest</title>
+  <style>
+    :root{
+      --bg1:#070818; --bg2:#120a2a;
+      --card:rgba(255,255,255,.06);
+      --stroke:rgba(255,255,255,.12);
+      --text:#f5f6ff; --muted:rgba(245,246,255,.72);
+      --gold:#ffd36b; --violet:#b7a6ff;
+      --ok:#48d16a; --bad:#ff5c7a; --warn:#ffb85c;
+      --shadow: 0 18px 55px rgba(0,0,0,.52);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, "Segoe UI", Tahoma, Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 25% 20%, rgba(183,166,255,.18), transparent 55%),
+        radial-gradient(900px 650px at 80% 30%, rgba(255,211,107,.18), transparent 55%),
+        radial-gradient(900px 650px at 50% 80%, rgba(72,209,106,.08), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    header{
+      padding:16px 16px 10px;
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      padding:10px 14px;
+      border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.04));
+      border-radius:999px;
+      box-shadow: var(--shadow);
+    }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background:
+        radial-gradient(circle at 30% 25%, rgba(255,211,107,.95), rgba(255,211,107,.15) 55%, transparent 60%),
+        linear-gradient(135deg, rgba(183,166,255,.65), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.15);
+      position:relative; overflow:hidden;
+    }
+    .logo:before{
+      content:""; position:absolute; inset:-20px;
+      background: linear-gradient(90deg, transparent 45%, rgba(255,255,255,.22) 50%, transparent 55%);
+      transform: rotate(25deg);
+      animation: shine 4s infinite;
+    }
+    @keyframes shine{
+      0%{transform:translateX(-35%) rotate(25deg)}
+      45%{transform:translateX(75%) rotate(25deg)}
+      100%{transform:translateX(75%) rotate(25deg)}
+    }
+    .title h1{ margin:0; font-size:16px; letter-spacing:.2px; }
+    .title .sub{ margin-top:2px; font-size:12px; color:var(--muted); }
+
+    .topActions{ margin-right:auto; display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    button, .chip{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      transition:.15s transform, .15s background, .15s border-color;
+      user-select:none;
+    }
+    button:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.22); background: rgba(255,255,255,.075); }
+    button:active{ transform: translateY(0px) scale(.99); }
+    button.primary{
+      border-color: rgba(255,211,107,.38);
+      background: linear-gradient(90deg, rgba(255,211,107,.12), rgba(183,166,255,.10));
+    }
+    .chip{ cursor:default; }
+
+    main{
+      padding: 0 16px 18px;
+      display:grid;
+      grid-template-columns: 390px 1fr;
+      gap:14px;
+    }
+    @media (max-width: 1050px){
+      main{ grid-template-columns:1fr; }
+    }
+    .panel{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHeader{
+      padding:14px;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    }
+    .panelHeader h2{ margin:0; font-size:14px; color: rgba(255,255,255,.92); }
+    .panelBody{ padding:14px; }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      background: rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      padding:2px 7px;
+      border-radius:8px;
+      color: rgba(255,255,255,.88);
+      font-size:12px;
+    }
+
+    .levels{ display:grid; gap:10px; }
+    .level{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      border-radius:16px;
+      padding:12px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      cursor:pointer;
+      transition:.15s transform, .15s border-color, .15s background;
+    }
+    .level:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.22); background: rgba(0,0,0,.18); }
+    .level.locked{ opacity:.45; cursor:not-allowed; filter:saturate(.6); }
+    .level .meta{ color: var(--muted); font-size:11px; margin-top:3px; }
+    .badge{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .badge.gold{ border-color: rgba(255,211,107,.35); color: rgba(255,211,107,.95); }
+    .badge.violet{ border-color: rgba(183,166,255,.35); color: rgba(183,166,255,.95); }
+    .badge.ok{ border-color: rgba(72,209,106,.35); color: rgba(72,209,106,.95); }
+    .badge.bad{ border-color: rgba(255,92,122,.35); color: rgba(255,92,122,.95); }
+    .badge.warn{ border-color: rgba(255,184,92,.35); color: rgba(255,184,92,.95); }
+
+    .hero{
+      border:1px solid rgba(255,255,255,.10);
+      background: radial-gradient(900px 450px at 20% 10%, rgba(255,211,107,.18), transparent 60%),
+                  radial-gradient(700px 420px at 85% 30%, rgba(183,166,255,.16), transparent 60%),
+                  rgba(0,0,0,.12);
+      border-radius: calc(var(--radius) + 4px);
+      padding:16px;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero:after{
+      content:"";
+      position:absolute; inset:-120px;
+      background:
+        linear-gradient(0deg, transparent 48%, rgba(255,255,255,.05) 50%, transparent 52%),
+        linear-gradient(90deg, transparent 48%, rgba(255,255,255,.05) 50%, transparent 52%);
+      background-size: 90px 90px;
+      transform: rotate(6deg);
+      opacity:.32;
+      pointer-events:none;
+    }
+    .hero h3{ margin:0 0 6px 0; font-size:18px; position:relative; }
+    .hero p{ margin:0; color: var(--muted); line-height:1.85; position:relative; }
+
+    .grid2{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:12px;
+    }
+    @media (max-width: 1050px){ .grid2{ grid-template-columns:1fr; } }
+
+    .card{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      border-radius: var(--radius);
+      padding:14px;
+    }
+    .card h4{ margin:0 0 8px 0; font-size:14px; color: rgba(255,255,255,.92); }
+    .card p{ margin:0; color: var(--muted); line-height:1.9; font-size:13px; }
+
+    .row{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    select, input[type="number"], input[type="text"]{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      outline:none;
+    }
+    .stats{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+    .stat{
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      font-size:12px;
+      color: rgba(255,255,255,.85);
+    }
+    .stat b{ color: var(--gold); font-weight:800; }
+
+    .gameWrap{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: 1fr 310px;
+      gap:12px;
+      align-items:start;
+    }
+    @media (max-width: 1050px){ .gameWrap{ grid-template-columns:1fr; } }
+
+    .board{
+      display:grid;
+      gap:8px;
+      padding:12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: var(--radius);
+      overflow:auto;
+    }
+    .cell{
+      width:64px; height:56px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:800;
+      font-size:16px;
+      user-select:none;
+      position:relative;
+    }
+    .cell.locked{
+      background: linear-gradient(180deg, rgba(255,211,107,.16), rgba(255,255,255,.03));
+      border-color: rgba(255,211,107,.25);
+    }
+    .cell.sel{
+      outline:2px solid rgba(183,166,255,.65);
+      box-shadow: 0 0 0 4px rgba(183,166,255,.10);
+    }
+    .cell.bad{
+      outline:2px solid rgba(255,92,122,.70);
+      box-shadow: 0 0 0 4px rgba(255,92,122,.12);
+    }
+    .cell.good{
+      outline:2px solid rgba(72,209,106,.70);
+      box-shadow: 0 0 0 4px rgba(72,209,106,.12);
+    }
+
+    .side{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: var(--radius);
+      padding:12px;
+    }
+    .side h5{ margin:0 0 10px 0; font-size:13px; color: rgba(255,255,255,.92); }
+
+    .nums{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:8px;
+      max-height: 340px;
+      overflow:auto;
+      padding-right:2px;
+    }
+    .num{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      border-radius:14px;
+      padding:10px 0;
+      text-align:center;
+      cursor:grab;
+      font-weight:800;
+      user-select:none;
+    }
+    .num.used{ opacity:.35; filter:saturate(.4); cursor:not-allowed; }
+    .hint{
+      margin-top:10px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.8;
+    }
+
+    .checks{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .checkBox{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      border-radius: var(--radius);
+      padding:12px;
+      font-size:12px;
+      color: rgba(255,255,255,.86);
+      line-height:1.85;
+    }
+    .ok{ color: var(--ok); font-weight:900; }
+    .bad{ color: var(--bad); font-weight:900; }
+    .warn{ color: var(--warn); font-weight:900; }
+
+    .footerNote{
+      margin-top:14px;
+      color: rgba(245,246,255,.65);
+      font-size:12px;
+      line-height:1.85;
+      padding:10px 2px 0;
+    }
+
+    .pillRow{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+    .pill{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      color: rgba(255,255,255,.86);
+    }
+    .pill strong{color:var(--gold)}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="logo"></div>
+    <div class="title">
+      <h1>مُهرِ جادو — بازی مرحله‌ای مربع‌های جادویی</h1>
+      <div class="sub">درسنامه + کوییز + کمپین ۳۰مرحله‌ای + آرِنای بی‌نهایت (برای آینده: رقابت و لیدربورد)</div>
+    </div>
+  </div>
+
+  <div class="topActions">
+    <button class="primary" id="btnCampaign">کمپین ۳۰ مرحله</button>
+    <button id="btnLesson">درسنامه</button>
+    <button id="btnQuizzes">کوییزها</button>
+    <button id="btnArena">آرنا (بی‌نهایت)</button>
+    <button id="btnPractice">تمرین آزاد</button>
+    <button id="btnFuture">آینده</button>
+    <button id="btnReset">ریست</button>
+    <span class="chip" id="chipScore">امتیاز کل: 0</span>
+    <span class="chip" id="chipLevel">مرحله باز: 1</span>
+  </div>
+</header>
+
+<main>
+  <section class="panel">
+    <div class="panelHeader">
+      <h2 id="leftTitle">کمپین</h2>
+      <span class="chip" id="chipMode">حالت: کمپین</span>
+    </div>
+    <div class="panelBody" id="left"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panelHeader">
+      <h2 id="viewTitle">خانه</h2>
+      <span class="chip" id="chipStatus">آماده</span>
+    </div>
+    <div class="panelBody" id="view"></div>
+  </section>
+</main>
+
+<script>
+/* ============================================================
+   مُهرِ جادو — نسخه یک‌فایلی (Offline)
+   - کمپین ۳۰ مرحله‌ای (۳×۳ تا ۶×۶)
+   - درسنامه برگرفته از اسلایدهای شما، اما بازنویسی‌شده (تکراری نیست)
+   - ۲ کوییز (مفهومی + محاسباتی/تحلیلی)
+   - بعد از کمپین: آرنای بی‌نهایت (چالش‌های تصادفی بی‌پایان)
+   - جای خالی برای آینده: لیدربورد، حساب کاربری، تورنمنت
+============================================================ */
+
+/* =========================
+   Persistence
+========================= */
+const SAVE_KEY = "MOHR_JADOO_SAVE_V2";
+const defaultSave = {
+  unlocked: 1,
+  totalScore: 0,
+  best: {},
+  medals: {},          // per level id: "gold"|"silver"|"bronze"
+  quizPassed: { Q1:false, Q2:false }, // gate quizzes
+  arena: { bestRun: 0, bestStreak: 0 }
+};
+function loadSave(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return structuredClone(defaultSave);
+    const obj = JSON.parse(raw);
+    return { ...structuredClone(defaultSave), ...obj,
+      quizPassed: { ...structuredClone(defaultSave).quizPassed, ...(obj.quizPassed||{}) },
+      arena: { ...structuredClone(defaultSave).arena, ...(obj.arena||{}) }
+    };
+  }catch{
+    return structuredClone(defaultSave);
+  }
+}
+function saveNow(){
+  localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  syncTopChips();
+}
+let save = loadSave();
+
+const $ = (id)=>document.getElementById(id);
+const el = (html)=>{
+  const t=document.createElement("template");
+  t.innerHTML = html.trim();
+  return t.content.firstChild;
+};
+function setStatus(txt){ $("chipStatus").textContent = txt; }
+function setLeftTitle(txt){ $("leftTitle").textContent = txt; }
+function setViewTitle(txt){ $("viewTitle").textContent = txt; }
+function setModeChip(txt){ $("chipMode").textContent = "حالت: " + txt; }
+function syncTopChips(){
+  $("chipScore").textContent = `امتیاز کل: ${save.totalScore}`;
+  $("chipLevel").textContent = `مرحله باز: ${save.unlocked}`;
+}
+syncTopChips();
+
+/* =========================
+   Timer
+========================= */
+const timer = { t0:null, raf:null, seconds:0, onTick:null };
+function startTimer(){
+  stopTimer();
+  timer.seconds = 0;
+  timer.t0 = performance.now();
+  const tick = ()=>{
+    timer.seconds = Math.floor((performance.now()-timer.t0)/1000);
+    if(timer.onTick) timer.onTick(timer.seconds);
+    timer.raf = requestAnimationFrame(tick);
+  };
+  timer.raf = requestAnimationFrame(tick);
+}
+function stopTimer(){
+  if(timer.raf) cancelAnimationFrame(timer.raf);
+  timer.raf=null;
+}
+
+/* =========================
+   Toast
+========================= */
+let toastEl=null;
+function toast(msg, kind="info"){
+  if(toastEl) toastEl.remove();
+  const dot = kind==="bad" ? "var(--bad)" : kind==="ok" ? "var(--ok)" : kind==="warn" ? "var(--warn)" : "var(--gold)";
+  toastEl = el(`
+    <div style="
+      position:fixed; left:16px; bottom:16px; z-index:9999;
+      max-width:min(560px, calc(100vw - 32px));
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      color: rgba(255,255,255,.92);
+      padding:12px 14px;
+      border-radius:14px;
+      box-shadow: 0 18px 50px rgba(0,0,0,.55);
+      line-height:1.8;
+    ">
+      <span style="color:${dot};font-weight:900">●</span>
+      <span style="margin-right:10px">${msg}</span>
+    </div>
+  `);
+  document.body.appendChild(toastEl);
+  setTimeout(()=>{ if(toastEl){ toastEl.remove(); toastEl=null; } }, 2600);
+}
+
+/* =========================
+   Magic Squares: constants + generators
+========================= */
+function magicConstant(n){ return (n*(n*n+1))/2; }
+
+function genOdd(n){
+  const a = Array.from({length:n}, ()=>Array(n).fill(0));
+  let i=0, j=Math.floor(n/2);
+  for(let num=1; num<=n*n; num++){
+    a[i][j]=num;
+    const ni = (i-1+n)%n;
+    const nj = (j+1)%n;
+    if(a[ni][nj]!==0) i = (i+1)%n;
+    else { i=ni; j=nj; }
+  }
+  return a;
+}
+function genDoublyEven(n){
+  const a = Array.from({length:n}, ()=>Array(n).fill(0));
+  let num=1;
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) a[i][j]=num++;
+  const N = n*n + 1;
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const inMain = (i%4===j%4);
+      const inAnti = ((i%4 + j%4)===3);
+      if(inMain || inAnti) a[i][j] = N - a[i][j];
+    }
+  }
+  return a;
+}
+function genSinglyEven(n){
+  const m = n/2;
+  const sub = genOdd(m);
+  const a = Array.from({length:n}, ()=>Array(n).fill(0));
+
+  const addA = 0, addB = 2*m*m, addC = 3*m*m, addD = 1*m*m;
+  for(let i=0;i<m;i++){
+    for(let j=0;j<m;j++){
+      a[i][j]       = sub[i][j] + addA;
+      a[i][j+m]     = sub[i][j] + addB;
+      a[i+m][j]     = sub[i][j] + addC;
+      a[i+m][j+m]   = sub[i][j] + addD;
+    }
+  }
+  const k = (m-1)/2;
+  for(let col=0; col<k; col++){
+    for(let row=0; row<m; row++){
+      [a[row][col], a[row+m][col]] = [a[row+m][col], a[row][col]];
+    }
+  }
+  for(let col=m-(k-1); col<m; col++){
+    for(let row=0; row<m; row++){
+      [a[row][col+m], a[row+m][col+m]] = [a[row+m][col+m], a[row][col+m]];
+    }
+  }
+  const specialCol = k;
+  for(let row=0; row<m; row++){
+    [a[row][specialCol], a[row+m][specialCol]] = [a[row+m][specialCol], a[row][specialCol]];
+  }
+  [a[k][0], a[k+m][0]] = [a[k+m][0], a[k][0]];
+  return a;
+}
+function generateMagicSquare(n){
+  if(n%2===1) return genOdd(n);
+  if(n%4===0) return genDoublyEven(n);
+  return genSinglyEven(n);
+}
+function sumsReport(square){
+  const n = square.length;
+  const M = magicConstant(n);
+  const row = Array(n).fill(0);
+  const col = Array(n).fill(0);
+  let d1=0, d2=0;
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const v = square[i][j]||0;
+      row[i]+=v; col[j]+=v;
+      if(i===j) d1+=v;
+      if(i+j===n-1) d2+=v;
+    }
+  }
+  const rowsOk = row.every(x=>x===M);
+  const colsOk = col.every(x=>x===M);
+  const diagsOk = (d1===M && d2===M);
+  return { n, M, row, col, d1, d2, rowsOk, colsOk, diagsOk, ok: rowsOk && colsOk && diagsOk };
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* =========================
+   Lessons (بازنویسی‌شده بر اساس اسلایدها)
+========================= */
+const LESSON = [
+  { id:"L0", title:"مربع‌های جادویی چیست؟", text:
+    "مربع جادویی یک جدول n×n است که اعدادش طوری چیده می‌شوند که جمع هر سطر، هر ستون و دو قطر اصلی یکسان باشد. این «یکسان‌بودنِ جمع» مثل یک قانون مخفی است که کل جدول را منظم می‌کند." },
+  { id:"L1", title:"تعریف رسمی و عدد جادویی", text:
+    "به آن جمع ثابت، «عدد جادویی» یا Magic Constant می‌گویند. اگر مربع استاندارد باشد و از ۱ تا n² استفاده کند، عدد جادویی با فرمول M = n(n²+1)/2 به دست می‌آید. یعنی فقط با دانستن n، هدف جمع‌ها مشخص می‌شود." },
+  { id:"L2", title:"چرا این موضوع برای منطق عددی مفید است؟", text:
+    "مربع جادویی ذهن را وادار می‌کند همزمان چند شرط (سطر، ستون، قطر) را مدیریت کند. این دقیقاً شبیه حل مسئله مرحله‌ای و طراحی الگوریتم است: هر حرکت باید با چند قید سازگار باشد." },
+  { id:"L3", title:"الگو و تقارن در مربع‌های جادویی", text:
+    "در خیلی از مربع‌ها تقارن‌های افقی/عمودی و حتی چرخشی دیده می‌شود. نکته جذاب این است که یک الگوی هندسی می‌تواند پشتش یک ساختار عددی منظم داشته باشد؛ یعنی «زیبایی» و «قانون» کنار هم." },
+  { id:"L4", title:"داستان لوشو (Lo Shu)", text:
+    "لوشو یک مربع ۳×۳ معروف است که جمع هر خط آن ۱۵ می‌شود. روایت‌های تاریخی آن را به چین باستان نسبت می‌دهند و گاهی به عنوان نمادی از تعادل طبیعت و نظم کیهانی معرفی می‌شود." },
+  { id:"L5", title:"تاریخچه کوتاه: چین، هند، اروپا", text:
+    "از چین باستان (لوشو) تا کاربردهای نجومی/نمادین در هند و سپس ورود به اروپا (قرون وسطی تا رنسانس)، مربع‌های جادویی هم مسیر فرهنگی داشته‌اند و هم مسیر ریاضی. در اروپا بعدها نگاه علمی‌تر شد و ریاضی‌دانان مطالعه‌شان را جدی‌تر کردند." },
+  { id:"L6", title:"نمونه هنری: دورر و مربع ۴×۴", text:
+    "در آثار هنری هم رد پای مربع‌های جادویی هست. یکی از نمونه‌های مشهور، مربع ۴×۴ در اثر «Melencolia I» است که جمع سطرها و ستون‌ها ۳۴ می‌شود و حتی به سال اثر هم اشاره‌هایی دارد." },
+  { id:"L7", title:"کاربرد در رمزنگاری و علوم رایانه", text:
+    "مربع جادویی می‌تواند مثل یک الگوی جایگشت (Permutation Pattern) عمل کند؛ یعنی برای جابه‌جایی منظم داده‌ها. این ایده‌ها در تمرین مفاهیم ماتریسی، تولید الگوهای شبه‌تصادفی، و حتی الهام برای کدگذاری آموزشی کاربرد دارند." },
+  { id:"L8", title:"کاربرد در فرهنگ و فلسفه باستان", text:
+    "در برخی فرهنگ‌ها مربع‌های جادویی نماد تعادل، هماهنگی و نظم جهان دانسته می‌شدند. این نگاه نمادین باعث شد مربع‌ها فقط یک بازی عددی نباشند و وارد هنر، معماری و روایت‌های فرهنگی شوند." },
+  { id:"L9", title:"کاربرد در بازی‌ها و پازل‌ها", text:
+    "خیلی از پازل‌های عددی (حتی شبیه سودوکو) از ایده «چند شرط همزمان» الهام می‌گیرند. مربع‌های جادویی هم پازل‌اند و هم تمرین تمرکز و استدلال." },
+  { id:"L10", title:"روش ساخت: مرتبه‌های فرد (سیامی)", text:
+    "برای n فرد (مثل ۳×۳ و ۵×۵)، روش سیامی/دولالوبره معروف است: عدد ۱ را وسط سطر اول بگذار، سپس هر بار یک خانه بالا-راست برو؛ اگر از جدول خارج شدی، از سمت مقابل وارد شو؛ اگر خانه پر بود، یک خانه پایین برو." },
+  { id:"L11", title:"روش ساخت: مرتبه‌های زوجِ مضرب ۴ (مکمل‌گیری)", text:
+    "برای ۴×۴ و ۸×۸، یک روش ساده این است که جدول را با ترتیب ۱ تا n² پر کنی و بعد در برخی خانه‌ها مقدار را با مکملش نسبت به (n²+1) جایگزین کنی. الگوهای ۴×۴ داخلی معمولاً تعیین می‌کنند کدام خانه‌ها عوض شوند." },
+  { id:"L12", title:"روش ساخت: زوجِ غیرمضرب ۴ (مثل ۶×۶)", text:
+    "برای ۶×۶ و ۱۰×۱۰ ساخت سخت‌تر است و از روش‌های ترکیبی بلوکی استفاده می‌شود: چند زیرمربع می‌سازیم و بعد با جابه‌جایی ستون‌های مشخص، کل مربع را جادویی می‌کنیم." },
+  { id:"L13", title:"جمع‌بندی نهایی", text:
+    "مربع‌های جادویی نشان می‌دهند که چطور یک ایده ساده (جمع برابر) می‌تواند به ساختارهای پیچیده و الهام‌بخش برسد: از تاریخ و هنر تا الگوریتم و بازی." },
+];
+
+/* =========================
+   Quizzes (۲ کوییز: مفهومی + محاسباتی)
+   - بازنویسی شده از متن اسلایدها (همان مطالب، جمله‌بندی جدید)
+========================= */
+const QUIZZES = [
+  {
+    id:"Q1",
+    title:"کوییز ۱ — مفهومی و تاریخی",
+    desc:"تعریف، تاریخچه، تقارن، کاربردها (برگرفته از اسلایدها، بازنویسی‌شده).",
+    passScore: 7,
+    questions: [
+      { type:"mcq", q:"در مربع جادویی چه چیزی ثابت می‌ماند؟", a:1,
+        choices:["تعداد خانه‌ها","جمع هر سطر/ستون/قطر","فقط قطر اصلی","فقط ستون‌ها"] },
+      { type:"mcq", q:"به جمع ثابت در مربع جادویی چه می‌گویند؟", a:2,
+        choices:["عدد محوری","عدد مرکزی","عدد جادویی (Magic Constant)","عدد تصادفی"] },
+      { type:"mcq", q:"لوشو معمولاً به کدام منطقه/تمدن نسبت داده می‌شود؟", a:0,
+        choices:["چین باستان","مصر باستان","یونان باستان","اروپای مدرن"] },
+      { type:"mcq", q:"یکی از دلایل آموزشی بودن مربع جادویی چیست؟", a:3,
+        choices:["فقط حفظ کردن جدول","فقط محاسبه یک جمع","بدون نیاز به منطق","مدیریت چند شرط همزمان"] },
+      { type:"mcq", q:"در بحث تقارن، کدام مورد می‌تواند در مربع‌های جادویی دیده شود؟", a:1,
+        choices:["فقط تقارن صوتی","تقارن افقی/عمودی/چرخشی","فقط تقارن رنگی","هیچ تقارنی ندارد"] },
+      { type:"mcq", q:"نمونه‌ی هنری مشهورِ مربع ۴×۴ اغلب با نام کدام هنرمند گره خورده؟", a:2,
+        choices:["ون‌گوگ","پیکاسو","آلبرشت دورر","رامبرانت"] },
+      { type:"mcq", q:"در علوم رایانه، مربع جادویی چه ایده‌ای را می‌تواند الهام بدهد؟", a:0,
+        choices:["الگوی جایگشت/چیدمان (Permutation)","فقط معادله دیفرانسیل","فقط رسم شکل","فقط هندسه اقلیدسی"] },
+      { type:"mcq", q:"در فرهنگ‌های باستانی، گاهی مربع‌های جادویی نماد چه چیزی تلقی می‌شدند؟", a:3,
+        choices:["هرج و مرج","تصادف مطلق","بی‌نظمی عددی","نظم و توازن"] },
+      { type:"mcq", q:"کدام گزینه به کاربرد بازی/پازل نزدیک‌تر است؟", a:1,
+        choices:["ساخت پل","تمرین تمرکز و استدلال عددی","پخت غذا","شنا"] },
+      { type:"mcq", q:"در نگاه امروزی، مربع جادویی فقط یک طلسم است؟", a:2,
+        choices:["بله کاملاً","فقط در گذشته","نه؛ جنبه تاریخی/هنری/منطقی هم دارد","فقط یک شوخی است"] },
+    ]
+  },
+  {
+    id:"Q2",
+    title:"کوییز ۲ — محاسبات و الگوریتم",
+    desc:"فرمول عدد جادویی، تشخیص نوع روش ساخت، و چند سؤال تحلیلی.",
+    passScore: 7,
+    questions: [
+      { type:"num", q:"برای مربع استاندارد ۳×۳، عدد جادویی M چند است؟", aNum:15 },
+      { type:"num", q:"برای مربع استاندارد ۴×۴، عدد جادویی M چند است؟", aNum:34 },
+      { type:"num", q:"برای مربع استاندارد ۵×۵، عدد جادویی M چند است؟", aNum:65 },
+      { type:"num", q:"برای مربع استاندارد ۶×۶، عدد جادویی M چند است؟", aNum:111 },
+      { type:"mcq", q:"روش سیامی (Siamese) معمولاً برای کدام n مناسب است؟", a:1,
+        choices:["زوج‌ها","فردها","فقط ۴×۴","فقط ۶×۶"] },
+      { type:"mcq", q:"برای n مضرب ۴ (مثل ۴×۴)، کدام ایده رایج است؟", a:0,
+        choices:["مکمل‌گیری نسبت به n²+1 در الگوی خاص","فقط چرخاندن جدول","فقط جابه‌جایی سطر اول","پرکردن تصادفی"] },
+      { type:"mcq", q:"۶×۶ در کدام دسته قرار می‌گیرد؟", a:3,
+        choices:["فرد","مضرب ۴","فقط ۳×۳","زوجِ غیرمضرب ۴"] },
+      { type:"mcq", q:"فرمول درست عدد جادویی مربع استاندارد کدام است؟", a:2,
+        choices:["M=n²+1","M=n(n+1)/2","M=n(n²+1)/2","M=(n²+1)/n"] },
+      { type:"mcq", q:"اگر در یک مربع استاندارد، اعداد ۱ تا n² استفاده شود، جمع کل اعداد چند است؟", a:1,
+        choices:["n²","(n²)(n²+1)","(n²)(n²+1)/2","n(n²+1)/2"] },
+      { type:"mcq", q:"اگر جمع کل اعداد معلوم باشد، چرا می‌توان M را حساب کرد؟", a:0,
+        choices:["چون مجموع سطرها n بار تکرار می‌شود و برابر مجموع کل است","چون فقط قطر مهم است","چون فقط ستون‌ها مهم‌اند","چون تصادفی است"] },
+    ]
+  }
+];
+
+/* =========================
+   Campaign: 30 Levels
+   Types:
+   - fill  : Fill blanks (must match solution)
+   - fix   : Some cells swapped/wrong (must match solution)
+   - givenM: Build full square meeting sums + uniqueness (not tied to one solution)
+   - guessM: See square -> guess M
+   - code  : "رمز" سبک (لوکال) از چیدمان/جایگشت (پازل کوتاه)
+   - symmetry: تقارن (چند خانه را طوری پر کن که نسخه قرینه بسازد)
+========================= */
+function lvl(id, n, type, title, diff, timePar, extra={}){
+  return { id, n, type, title, diff, timePar, ...extra };
+}
+
+const LEVELS = [
+  // 1–10 (۳×۳)
+  lvl("C01",3,"fill","شروع گرم: پرکردن جاهای خالی (۳×۳)",1,90,{blanks:4}),
+  lvl("C02",3,"guessM","عدد جادویی را حدس بزن (۳×۳)",1,40,{}),
+  lvl("C03",3,"fill","پرکردن سریع (۳×۳) — کم‌زمان",2,70,{blanks:5}),
+  lvl("C04",3,"fix","اصلاح مربع خراب (۳×۳)",2,95,{wrong:2}),
+  lvl("C05",3,"givenM","ساخت کامل با M داده‌شده (۳×۳)",3,140,{}),
+  lvl("C06",3,"fill","پرکردن با قفل‌های کمتر (۳×۳)",3,100,{blanks:6}),
+  lvl("C07",3,"symmetry","چالش تقارن: نسخه قرینه بساز (۳×۳)",3,120,{sym:"h"}), // horizontal
+  lvl("C08",3,"fill","پرکردن بدون راهنما (۳×۳)",4,110,{blanks:7, hintLock:true}),
+  lvl("C09",3,"code","کدگذاری ساده: جایگشت از مربع (۳×۳)",4,130,{}),
+  lvl("C10",3,"fix","اصلاح سخت‌تر (۳×۳)",5,130,{wrong:3}),
+
+  // 11–20 (۴×۴ و ۵×۵)
+  lvl("C11",4,"guessM","ورود به ۴×۴: حدس M",2,50,{}),
+  lvl("C12",4,"fill","پرکردن جاهای خالی (۴×۴)",3,170,{blanks:8}),
+  lvl("C13",4,"fix","اصلاح ۴×۴ (مربع دورر الهام)",4,210,{wrong:3}),
+  lvl("C14",4,"givenM","ساخت ۴×۴ با M",5,280,{}),
+  lvl("C15",4,"symmetry","تقارن چرخشی: ۱۸۰ درجه (۴×۴)",5,230,{sym:"rot180"}),
+  lvl("C16",5,"guessM","ورود به ۵×۵: حدس M",3,60,{}),
+  lvl("C17",5,"fill","پرکردن ۵×۵ (روش سیامی در پس‌زمینه)",5,360,{blanks:14}),
+  lvl("C18",5,"fix","اصلاح ۵×۵ (سخت)",6,420,{wrong:5}),
+  lvl("C19",5,"givenM","ساخت ۵×۵ با M",7,560,{}),
+  lvl("C20",5,"code","رمزنگاری بازیگوش: الگوی جایگشت (۵×۵)",7,520,{}),
+
+  // 21–30 (۶×۶)
+  lvl("C21",6,"guessM","ورود به ۶×۶: حدس M",4,70,{}),
+  lvl("C22",6,"fill","پرکردن ۶×۶ (پیشرفته)",7,560,{blanks:20}),
+  lvl("C23",6,"fix","اصلاح ۶×۶ (چند خطا)",8,640,{wrong:7}),
+  lvl("C24",6,"givenM","ساخت ۶×۶ با M (سنگین)",9,820,{}),
+  lvl("C25",6,"symmetry","تقارن عمودی: آینه‌ای (۶×۶)",9,700,{sym:"v"}),
+  lvl("C26",6,"fill","پرکردن خیلی سخت (۶×۶)",10,650,{blanks:24, hintLock:true}),
+  lvl("C27",6,"fix","اصلاح حرفه‌ای (۶×۶)",10,720,{wrong:9}),
+  lvl("C28",6,"givenM","ساخت با محدودیت زمان سخت",11,760,{timeHard:true}),
+  lvl("C29",6,"code","کد نهایی: پیام مخفی از مربع (۶×۶)",11,720,{}),
+  lvl("C30",6,"mix","مرحله پایانی: ترکیبی (۶×۶)",12,780,{blanks:18, wrong:6}),
+];
+
+/* =========================
+   Quiz Gates:
+   - بعد از مرحله 10: باید Q1 را پاس کند تا مرحله 11 باز شود
+   - بعد از مرحله 20: باید Q2 را پاس کند تا مرحله 21 باز شود
+========================= */
+function gateForLevel(levelIndex){
+  if(levelIndex===11 && !save.quizPassed.Q1) return "Q1";
+  if(levelIndex===21 && !save.quizPassed.Q2) return "Q2";
+  return null;
+}
+
+/* =========================
+   Game State
+========================= */
+let game = null;
+/*
+game = {
+  mode: "campaign"|"practice"|"arena",
+  level, n, M, type,
+  sol, grid, locked(Set),
+  selected,
+  scoreRun, mistakes, hints, moves,
+  finished, arenaStreak, arenaRunScore
+}
+*/
+function initGameFromLevel(level, mode="campaign"){
+  const n = level.n;
+  const sol = generateMagicSquare(n);
+  const M = magicConstant(n);
+
+  let grid = Array.from({length:n}, ()=>Array(n).fill(null));
+  let locked = new Set();
+
+  if(level.type==="fill" || level.type==="mix"){
+    grid = sol.map(r=>r.slice());
+    const total = n*n;
+    const blanks = Math.min(level.blanks ?? Math.floor(total*0.35), total-1);
+    const idxs = [...Array(total).keys()];
+    shuffle(idxs);
+    const blankSet = new Set(idxs.slice(0, blanks));
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        const idx = i*n+j;
+        if(blankSet.has(idx)) grid[i][j]=null;
+        else locked.add(idx);
+      }
+    }
+    const ci = Math.floor(n/2), cj = Math.floor(n/2);
+    const cidx = ci*n+cj;
+    if(grid[ci][cj]!==null) locked.add(cidx);
+  }
+
+  if(level.type==="fix" || level.type==="mix"){
+    if(level.type==="fix"){
+      grid = sol.map(r=>r.slice());
+    }
+    const total = n*n;
+    const wrong = Math.min(level.wrong ?? Math.floor(total*0.12), Math.floor(total/2));
+    const idxs = [...Array(total).keys()];
+    shuffle(idxs);
+    const picks = idxs.slice(0, wrong*2);
+    for(let k=0;k<picks.length;k+=2){
+      const a = picks[k], b = picks[k+1];
+      const ai = Math.floor(a/n), aj = a%n;
+      const bi = Math.floor(b/n), bj = b%n;
+      if(grid[ai][aj]==null || grid[bi][bj]==null) continue;
+      [grid[ai][aj], grid[bi][bj]] = [grid[bi][bj], grid[ai][aj]];
+    }
+    const lockCount = Math.max(1, Math.floor(total * 0.16));
+    const lockIdx = idxs.slice(wrong*2, wrong*2 + lockCount);
+    for(const idx of lockIdx) locked.add(idx);
+  }
+
+  if(level.type==="givenM"){
+    // empty
+  }
+
+  if(level.type==="guessM"){
+    grid = sol.map(r=>r.slice());
+    locked = new Set([...Array(n*n).keys()]);
+  }
+
+  if(level.type==="symmetry"){
+    // نیمی از جدول را پر می‌کنیم و نیم دیگر باید قرینه ساخته شود (هدف: مطابق قرینه نه الزاماً مربع جادویی)
+    // اما برای این‌که در مسیر درسنامه هم بماند، از یک مربع جادویی واقعی استفاده می‌کنیم و نصف دیگر را خالی می‌کنیم.
+    grid = sol.map(r=>r.slice());
+    const total=n*n;
+    const idxs=[...Array(total).keys()];
+    // خالی کردن حدود نصف خانه‌ها
+    shuffle(idxs);
+    const blanks = Math.floor(total*0.5);
+    const blankSet = new Set(idxs.slice(0, blanks));
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        const idx=i*n+j;
+        if(blankSet.has(idx)) grid[i][j]=null;
+        else locked.add(idx);
+      }
+    }
+  }
+
+  if(level.type==="code"){
+    // یک مرحله کوتاهِ رمز: بازیکن فقط باید یک "کد" را از مربع بگیرد یا برعکس
+    // اینجا ما همچنان UI مربع را داریم، اما هدف: تکمیل یک ردیف/ستون خاص و سپس کد را وارد کند.
+    grid = sol.map(r=>r.slice());
+    // چند خانه را خالی می‌کنیم تا قابل تعامل باشد
+    const total=n*n;
+    const blanks = Math.max(3, Math.floor(total*0.18));
+    const idxs=[...Array(total).keys()];
+    shuffle(idxs);
+    const blankSet=new Set(idxs.slice(0, blanks));
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        const idx=i*n+j;
+        if(blankSet.has(idx)) grid[i][j]=null;
+        else locked.add(idx);
+      }
+    }
+  }
+
+  game = {
+    mode,
+    level, n, M, type: level.type,
+    sol, grid, locked,
+    selected: null,
+    scoreRun: 0,
+    mistakes: 0,
+    hints: 0,
+    moves: 0,
+    finished:false,
+    arenaStreak: 0,
+    arenaRunScore: 0
+  };
+
+  if(level.type==="guessM" || level.type==="code"){
+    stopTimer();
+  } else {
+    startTimer();
+  }
+}
+
+/* =========================
+   Scoring + Medals
+========================= */
+function baseScoreForLevel(lv){
+  const baseN = {3:120,4:230,5:380,6:560,7:740,8:920}[lv.n] || (200 + 120*(lv.n-3));
+  const typeMul =
+    lv.type==="guessM" ? 0.55 :
+    lv.type==="fill"   ? 1.00 :
+    lv.type==="fix"    ? 1.18 :
+    lv.type==="givenM" ? 1.30 :
+    lv.type==="symmetry"? 1.05 :
+    lv.type==="code"   ? 1.15 :
+    lv.type==="mix"    ? 1.40 : 1.0;
+  return Math.round(baseN * typeMul);
+}
+function speedBonusCap(lv){
+  return Math.round(40 + 22*lv.diff + 10*(lv.n-3));
+}
+function computeSpeedBonus(lv, seconds){
+  const cap = speedBonusCap(lv);
+  const par = lv.timePar;
+  if(seconds >= par) return 0;
+  const ratio = (par - seconds) / par;
+  return Math.round(cap * ratio);
+}
+function finalizeScore(isPractice){
+  const lv = game.level;
+  const base = baseScoreForLevel(lv);
+  const speed = (lv.type==="guessM" || lv.type==="code") ? computeSpeedBonus(lv, 0) : computeSpeedBonus(lv, timer.seconds);
+  const diff = lv.diff;
+
+  const penalties = game.hints*35 + game.mistakes*10;
+  const run = Math.max(-120, Math.min(180, Math.round(game.scoreRun)));
+
+  const total = Math.max(0, Math.round(base*diff + speed + run - penalties));
+  return { base, diff, speed, run, penalties, total, seconds: timer.seconds };
+}
+function medalForResult(lv, result){
+  // Bronze: finish
+  // Silver: finish + no hints
+  // Gold: finish + no hints + no mistakes + fast (<= timePar)
+  const fastEnough = (lv.type==="guessM" || lv.type==="code") ? true : (result.seconds <= lv.timePar);
+  if(game.hints===0 && game.mistakes===0 && fastEnough) return "gold";
+  if(game.hints===0) return "silver";
+  return "bronze";
+}
+function medalLabel(m){
+  if(m==="gold") return "🥇 طلا";
+  if(m==="silver") return "🥈 نقره";
+  return "🥉 برنز";
+}
+
+/* =========================
+   Rendering: Home
+========================= */
+function renderHome(){
+  setViewTitle("خانه");
+  setStatus("آماده");
+  $("view").innerHTML = "";
+  $("view").appendChild(el(`
+    <div class="hero">
+      <h3>به «مُهرِ جادو» خوش آمدی</h3>
+      <p>
+        این بازی برای پروژه‌ و ارائه‌ی جشنواره طراحی شده: هم درسنامه دارد، هم کوییز، هم ۳۰ مرحله‌ی جدی،
+        و بعد از آن «آرنا» که چالش‌های بی‌پایان می‌سازد.
+      </p>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>قانون امتیاز</h4>
+          <p>
+            امتیاز مرحله = امتیاز پایه × سختی + پاداش سرعت − جریمه‌ها.<br>
+            هر راهنمایی: <span class="kbd">-35</span> • هر اشتباه در بررسی: <span class="kbd">-10</span>
+          </p>
+        </div>
+        <div class="card">
+          <h4>برای ارائه جشنواره</h4>
+          <p>
+            بخش «آینده» را ببین: ایده‌های آماده برای لیدربورد، رقابت، تورنمنت، و افزایش کاربران
+            (بدون اینکه فعلاً نیاز به اینترنت باشد).
+          </p>
+        </div>
+      </div>
+
+      <div class="footerNote">
+        مسیر پیشنهادی: <span class="kbd">درسنامه</span> → <span class="kbd">کوییز ۱</span> → <span class="kbd">کمپین</span> → بعد از پایان: <span class="kbd">آرنا</span>
+      </div>
+    </div>
+  `));
+}
+
+/* =========================
+   Campaign list
+========================= */
+function renderCampaign(){
+  setModeChip("کمپین");
+  setLeftTitle("کمپین ۳۰ مرحله‌ای");
+  $("left").innerHTML = "";
+
+  const box = el(`<div class="levels"></div>`);
+
+  LEVELS.forEach((lv, idx)=>{
+    const levelIndex = idx+1;
+    const locked = levelIndex > save.unlocked;
+
+    const best = save.best[lv.id] ?? null;
+    const medal = save.medals[lv.id] ?? null;
+
+    const typeName =
+      lv.type==="fill" ? "Fill Blanks" :
+      lv.type==="givenM" ? "Magic Constant Given" :
+      lv.type==="guessM" ? "Find M" :
+      lv.type==="fix" ? "Fix It" :
+      lv.type==="symmetry" ? "Symmetry" :
+      lv.type==="code" ? "Code Puzzle" :
+      "Mixed";
+
+    const gate = gateForLevel(levelIndex);
+    const gateBadge = gate ? `<span class="badge warn">نیاز به پاس کردن ${gate}</span>` : "";
+
+    const bestBadge = best!=null ? `<span class="badge ok">بهترین: ${best}</span>` : `<span class="badge">بدون رکورد</span>`;
+    const medalBadge = medal ? `<span class="badge gold">${medalLabel(medal)}</span>` : `<span class="badge">بدون مدال</span>`;
+
+    const node = el(`
+      <div class="level ${locked?'locked':''}">
+        <div>
+          <div style="font-weight:900">${levelIndex}. ${lv.title}</div>
+          <div class="meta">نوع: ${typeName} • n=${lv.n} • زمان معیار: ${lv.timePar}s</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end">
+          <span class="badge violet">سختی ×${lv.diff}</span>
+          ${gateBadge}
+          ${medalBadge}
+          ${bestBadge}
+          <span class="badge ${locked?'bad':'gold'}">${locked?'قفل':'بازی'}</span>
+        </div>
+      </div>
+    `);
+
+    node.addEventListener("click", ()=>{
+      if(locked){ toast("این مرحله هنوز قفل است.", "warn"); return; }
+
+      const gate = gateForLevel(levelIndex);
+      if(gate){
+        toast(`برای ادامه باید ${gate} را پاس کنی.`, "warn");
+        renderQuizzes();
+        renderQuiz(gate);
+        return;
+      }
+
+      startLevel(levelIndex);
+    });
+
+    box.appendChild(node);
+  });
+
+  $("left").appendChild(box);
+  renderHome();
+}
+
+/* =========================
+   Lessons
+========================= */
+function renderLesson(){
+  setModeChip("درسنامه");
+  setLeftTitle("فهرست درسنامه");
+  $("left").innerHTML = "";
+  const box = el(`<div class="levels"></div>`);
+
+  LESSON.forEach((t, idx)=>{
+    const node = el(`
+      <div class="level">
+        <div>
+          <div style="font-weight:900">${idx+1}. ${t.title}</div>
+          <div class="meta">متن بازنویسی‌شده (همان مفاهیم اسلایدها)</div>
+        </div>
+        <span class="badge gold">باز کن</span>
+      </div>
+    `);
+    node.addEventListener("click", ()=> renderLessonTopic(t.id));
+    box.appendChild(node);
+  });
+
+  $("left").appendChild(box);
+  renderLessonTopic(LESSON[0].id);
+}
+function renderLessonTopic(topicId){
+  const t = LESSON.find(x=>x.id===topicId) || LESSON[0];
+  setViewTitle(t.title);
+  setStatus("مطالعه");
+  $("view").innerHTML = "";
+  $("view").appendChild(el(`
+    <div class="hero">
+      <h3>${t.title}</h3>
+      <p>${t.text}</p>
+
+      <div class="grid2">
+        <div class="card">
+          <h4>فرمول کلیدی</h4>
+          <p>
+            برای مربع استاندارد:
+            <span class="kbd">M = n(n²+1)/2</span><br>
+            مثال‌ها: ۳×۳ → ۱۵ ، ۴×۴ → ۳۴ ، ۵×۵ → ۶۵ ، ۶×۶ → ۱۱۱
+          </p>
+        </div>
+        <div class="card">
+          <h4>ارتباط با بازی</h4>
+          <p>
+            در کمپین، مرحله‌ها به شکل پلکانی طراحی شده‌اند تا هم مفهوم را یاد بگیری،
+            هم «مهارت حل مسئله» را بسازی. بعد از مرحله ۱۰ و ۲۰ باید کوییزها را پاس کنی تا مسیر باز شود.
+          </p>
+        </div>
+      </div>
+
+      <div class="footerNote">
+        پیشنهاد: بعد از درسنامه، برو <span class="kbd">کوییزها</span> و سپس وارد <span class="kbd">کمپین</span> شو.
+      </div>
+    </div>
+  `));
+}
+
+/* =========================
+   Quizzes
+========================= */
+function renderQuizzes(){
+  setModeChip("کوییز");
+  setLeftTitle("کوییزها");
+  $("left").innerHTML = "";
+
+  const box = el(`<div class="levels"></div>`);
+  QUIZZES.forEach((qz, idx)=>{
+    const passed = save.quizPassed[qz.id] === true;
+    const node = el(`
+      <div class="level">
+        <div>
+          <div style="font-weight:900">${idx+1}. ${qz.title}</div>
+          <div class="meta">${qz.desc} • حدنصاب: ${qz.passScore}/${qz.questions.length}</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end">
+          <span class="badge ${passed?'ok':'warn'}">${passed?'پاس شده':'پاس نشده'}</span>
+          <span class="badge gold">شروع</span>
+        </div>
+      </div>
+    `);
+    node.addEventListener("click", ()=> renderQuiz(qz.id));
+    box.appendChild(node);
+  });
+
+  $("left").appendChild(box);
+  renderHome();
+}
+function renderQuiz(quizId){
+  const qz = QUIZZES.find(x=>x.id===quizId) || QUIZZES[0];
+  setViewTitle(qz.title);
+  setStatus("کوییز");
+  stopTimer();
+  $("view").innerHTML = "";
+
+  let answers = Array(qz.questions.length).fill(null);
+
+  const wrap = el(`
+    <div class="hero">
+      <h3>${qz.title}</h3>
+      <p>${qz.desc}</p>
+
+      <div class="card" style="margin-top:12px" id="quizBody"></div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btnSubmit">ثبت و ارزیابی</button>
+        <button id="btnBack">بازگشت</button>
+      </div>
+
+      <div class="footerNote" id="quizResult"></div>
+    </div>
+  `);
+
+  $("view").appendChild(wrap);
+
+  const body = wrap.querySelector("#quizBody");
+
+  qz.questions.forEach((qq, i)=>{
+    if(qq.type==="mcq"){
+      const node = el(`
+        <div class="card" style="margin-bottom:10px">
+          <h4>سؤال ${i+1}</h4>
+          <p style="margin-bottom:10px">${qq.q}</p>
+          <div class="row" style="gap:8px">
+            ${qq.choices.map((c,ci)=>`
+              <button data-i="${i}" data-ci="${ci}" style="flex:1; min-width:140px">${c}</button>
+            `).join("")}
+          </div>
+          <div class="hint" id="sel_${i}">پاسخ انتخاب نشده</div>
+        </div>
+      `);
+      node.querySelectorAll("button[data-i]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const ii = Number(btn.dataset.i);
+          const ci = Number(btn.dataset.ci);
+          answers[ii] = ci;
+          node.querySelector(`#sel_${ii}`).innerHTML = `انتخاب شد: <span class="kbd">${qq.choices[ci]}</span>`;
+        });
+      });
+      body.appendChild(node);
+    } else {
+      const node = el(`
+        <div class="card" style="margin-bottom:10px">
+          <h4>سؤال ${i+1}</h4>
+          <p style="margin-bottom:10px">${qq.q}</p>
+          <div class="row">
+            <input type="number" id="num_${i}" placeholder="عدد را وارد کن" />
+          </div>
+          <div class="hint" id="sel_${i}">پاسخ وارد نشده</div>
+        </div>
+      `);
+      node.querySelector(`#num_${i}`).addEventListener("input",(e)=>{
+        const v = Number(e.target.value);
+        answers[i] = Number.isFinite(v) ? v : null;
+        node.querySelector(`#sel_${i}`).innerHTML = answers[i]==null ? "پاسخ وارد نشده" : `وارد شد: <span class="kbd">${answers[i]}</span>`;
+      });
+      body.appendChild(node);
+    }
+  });
+
+  wrap.querySelector("#btnBack").addEventListener("click", renderQuizzes);
+  wrap.querySelector("#btnSubmit").addEventListener("click", ()=>{
+    let score=0;
+    qz.questions.forEach((qq,i)=>{
+      if(qq.type==="mcq"){
+        if(answers[i]===qq.a) score++;
+      }else{
+        if(Number(answers[i])===Number(qq.aNum)) score++;
+      }
+    });
+
+    const passed = score >= qz.passScore;
+    const res = wrap.querySelector("#quizResult");
+    res.innerHTML = `
+      نتیجه: <span class="kbd">${score}/${qz.questions.length}</span>
+      ${passed ? `<span class="ok">پاس شد ✅</span>` : `<span class="bad">پاس نشد ❌</span>`}
+    `;
+
+    if(passed){
+      save.quizPassed[qz.id] = true;
+      // bonus points for passing
+      const bonus = 250 + 80*(qz.id==="Q2");
+      save.totalScore += bonus;
+      saveNow();
+      toast(`کوییز پاس شد! +${bonus} امتیاز`, "ok");
+    }else{
+      toast("حدنصاب را نگرفتی. دوباره تلاش کن.", "warn");
+    }
+  });
+}
+
+/* =========================
+   Practice
+========================= */
+function renderPractice(){
+  setModeChip("تمرین آزاد");
+  setLeftTitle("تنظیمات تمرین");
+  $("left").innerHTML = "";
+
+  const node = el(`
+    <div class="card">
+      <h4>تمرین آزاد</h4>
+      <p style="margin-bottom:10px">
+        اینجا می‌تونی نوع چالش و اندازه را انتخاب کنی. امتیاز کل ذخیره نمی‌شود.
+      </p>
+
+      <div class="row">
+        <label>اندازه:
+          <select id="prN">
+            <option value="3">۳×۳</option>
+            <option value="4">۴×۴</option>
+            <option value="5">۵×۵</option>
+            <option value="6">۶×۶</option>
+            <option value="7">۷×۷</option>
+            <option value="8">۸×۸</option>
+          </select>
+        </label>
+
+        <label>نوع:
+          <select id="prType">
+            <option value="fill">Fill Blanks</option>
+            <option value="givenM">Magic Constant Given</option>
+            <option value="guessM">Find M</option>
+            <option value="fix">Fix It</option>
+            <option value="symmetry">Symmetry</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <label>سختی:
+          <select id="prDiff">
+            <option value="easy">آسان</option>
+            <option value="med" selected>متوسط</option>
+            <option value="hard">سخت</option>
+          </select>
+        </label>
+        <button class="primary" id="prStart">شروع تمرین</button>
+      </div>
+
+      <div class="hint">
+        نکته: تمرین آزاد برای یادگیری الگوریتم‌ها و آمادگی جشنواره عالی است.
+      </div>
+    </div>
+  `);
+  $("left").appendChild(node);
+
+  node.querySelector("#prStart").addEventListener("click", ()=>{
+    const n = Number(node.querySelector("#prN").value);
+    const type = node.querySelector("#prType").value;
+    const d = node.querySelector("#prDiff").value;
+    const tmp = makePracticeLevel(n,type,d);
+    startCustomLevel(tmp, "practice");
+  });
+
+  renderHome();
+}
+function makePracticeLevel(n,type,d){
+  const timeParBase = {3:120,4:240,5:420,6:620,7:820,8:980}[n] || 300;
+  const diffBase = {easy:1, med:2, hard:3}[d] || 2;
+  const blanksBase = {3:5,4:9,5:15,6:22,7:30,8:40}[n] || 10;
+  const wrongBase = {3:2,4:3,5:5,6:7,7:9,8:12}[n] || 4;
+
+  const lv = {
+    id:"PRACTICE",
+    n, type,
+    diff: (type==="guessM"?1: diffBase + Math.max(0,(n-3))),
+    timePar: Math.round(timeParBase * (d==="easy"?0.95 : d==="hard"?1.18 : 1.0)),
+    title:"تمرین آزاد"
+  };
+  if(type==="fill"){
+    lv.blanks = Math.round(blanksBase * (d==="easy"?0.75 : d==="hard"?1.25 : 1.0));
+  }
+  if(type==="fix"){
+    lv.wrong = Math.round(wrongBase * (d==="easy"?0.7 : d==="hard"?1.3 : 1.0));
+  }
+  if(type==="symmetry"){
+    lv.sym = (d==="hard") ? "rot180" : (d==="easy" ? "h" : "v");
+  }
+  return lv;
+}
+
+/* =========================
+   Arena (بی‌نهایت)
+   - چالش‌های بی‌پایان با تولید تصادفی سطح و نوع
+   - امتیازدهی در «Run» و رکورد بهترین Run
+========================= */
+let arenaState = { active:false, runScore:0, streak:0, seed:0 };
+
+function renderArena(){
+  setModeChip("آرنا");
+  setLeftTitle("آرنا — چالش‌های بی‌پایان");
+  $("left").innerHTML = "";
+
+  const node = el(`
+    <div class="card">
+      <h4>آرنا (Endless)</h4>
+      <p>
+        بعد از کمپین، اینجا می‌تونی هرچقدر خواستی چالش بزنی. چالش‌ها «بی‌نهایت» هستند چون به‌صورت الگوریتمی تولید می‌شوند.
+      </p>
+      <div class="pillRow">
+        <div class="pill">بهترین Run: <strong>${save.arena.bestRun}</strong></div>
+        <div class="pill">بهترین Streak: <strong>${save.arena.bestStreak}</strong></div>
+      </div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="arenaStart">شروع Run جدید</button>
+        <button id="arenaDaily">چالش روزانه (آفلاین)</button>
+        <button id="arenaInfo">قوانین امتیاز</button>
+      </div>
+
+      <div class="hint" id="arenaHint" style="margin-top:10px">
+        نکته: هر مرحله که در آرنا ببری، Streak بالا می‌رود و ضریب امتیاز بیشتر می‌شود.
+      </div>
+    </div>
+  `);
+  $("left").appendChild(node);
+
+  node.querySelector("#arenaInfo").addEventListener("click", ()=>{
+    toast("در آرنا: هر برد = امتیاز مرحله × (1 + 0.06×Streak). اگر ببازی، Run تمام می‌شود.", "info");
+  });
+
+  node.querySelector("#arenaDaily").addEventListener("click", ()=>{
+    // seed based on date (offline)
+    const d = new Date();
+    const seed = Number(`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`);
+    startArenaRun(seed);
+  });
+
+  node.querySelector("#arenaStart").addEventListener("click", ()=>{
+    startArenaRun(Math.floor(Math.random()*1e9));
+  });
+
+  renderHome();
+}
+
+function startArenaRun(seed){
+  arenaState = { active:true, runScore:0, streak:0, seed };
+  toast("Run شروع شد! موفق باشی.", "ok");
+  startNextArenaChallenge();
+}
+
+function seededRand(seed){
+  // xorshift32
+  let x = seed|0;
+  x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+  return (x>>>0) / 4294967296;
+}
+
+function nextArenaLevel(){
+  // use seed evolving
+  let s = arenaState.seed;
+  const r1 = seededRand(s + 101);
+  const r2 = seededRand(s + 202);
+  const r3 = seededRand(s + 303);
+  arenaState.seed = (s + 99991) >>> 0;
+
+  // size grows with streak
+  const baseN = 3 + Math.min(5, Math.floor(arenaState.streak / 3));
+  const n = clamp(Math.floor(baseN + r1*3), 3, 8);
+
+  const types = ["fill","fix","givenM","guessM","symmetry","code"];
+  const w = [
+    0.33, // fill
+    0.18, // fix
+    0.16, // givenM
+    0.10, // guessM
+    0.12, // symmetry
+    0.11  // code
+  ];
+  const t = weightedPick(types, w, r2);
+
+  const diff = clamp(2 + Math.floor(n-3) + Math.floor(arenaState.streak/4), 2, 14);
+  const timePar = Math.round(( {3:110,4:220,5:390,6:600,7:820,8:980}[n] || 450 ) * (0.92 + 0.05*r3));
+  const title = `آرنا: ${t} • ${n}×${n}`;
+
+  const lv = { id:"ARENA", n, type:t, title, diff, timePar };
+  if(t==="fill") lv.blanks = Math.round((n*n) * (0.28 + 0.20*r3));
+  if(t==="fix") lv.wrong = Math.round((n*n) * (0.10 + 0.06*r3));
+  if(t==="symmetry") lv.sym = (r3<0.33) ? "h" : (r3<0.66) ? "v" : "rot180";
+  return lv;
+}
+function weightedPick(items, weights, r){
+  let sum=0;
+  for(const w of weights) sum += w;
+  let x = r * sum;
+  for(let i=0;i<items.length;i++){
+    x -= weights[i];
+    if(x<=0) return items[i];
+  }
+  return items[items.length-1];
+}
+function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+function startNextArenaChallenge(){
+  const lv = nextArenaLevel();
+  initGameFromLevel(lv, "arena");
+  renderGameView("arena");
+}
+
+/* =========================
+   Future (Placeholder)
+========================= */
+function renderFuture(){
+  setModeChip("آینده");
+  setLeftTitle("قابلیت‌های آینده (برای رشد کاربران)");
+  $("left").innerHTML = "";
+
+  $("left").appendChild(el(`
+    <div class="card">
+      <h4>این بخش مخصوص جشنواره است</h4>
+      <p>
+        ایده‌هایی که الآن در کد «جای خالی» دارند و اگر بازی بزرگ شد می‌شود آن‌ها را آنلاین کرد.
+        فعلاً بازی آفلاین است، اما طراحی طوری انجام شده که توسعه‌پذیر باشد.
+      </p>
+      <div class="pillRow">
+        <div class="pill">🏁 تورنمنت‌های هفتگی</div>
+        <div class="pill">🌍 لیدربورد کشوری/مدرسه‌ای</div>
+        <div class="pill">👤 حساب کاربری + پروفایل</div>
+        <div class="pill">☁️ ذخیره ابری و سینک</div>
+        <div class="pill">🎁 جوایز و اسکین‌ها</div>
+        <div class="pill">🧠 پازل‌ساز برای معلم‌ها</div>
+      </div>
+      <div class="hint" style="margin-top:12px">
+        نکته فنی: برای آنلاین‌کردن، فقط یک API ساده لازم است (ثبت امتیاز، دریافت لیدربورد).
+        UI و ساختار بازی از الان آماده‌ی اتصال است.
+      </div>
+    </div>
+  `));
+
+  renderHome();
+}
+
+/* =========================
+   Start Level
+========================= */
+function startLevel(levelIndex){
+  const level = LEVELS[levelIndex-1];
+
+  // gate check (double safety)
+  const gate = gateForLevel(levelIndex);
+  if(gate){
+    toast(`برای ادامه باید ${gate} را پاس کنی.`, "warn");
+    renderQuizzes();
+    renderQuiz(gate);
+    return;
+  }
+
+  initGameFromLevel(level, "campaign");
+  renderGameView("campaign");
+}
+function startCustomLevel(level, mode){
+  initGameFromLevel(level, mode);
+  renderGameView(mode);
+}
+
+/* =========================
+   Board helpers
+========================= */
+function usedNumbers(){
+  const used = new Set();
+  for(const row of game.grid) for(const v of row) if(v!=null) used.add(v);
+  return used;
+}
+
+/* =========================
+   Render Game
+========================= */
+function renderGameView(mode){
+  const lv = game.level;
+  const n = game.n;
+
+  const modeLabel = mode==="campaign" ? "کمپین" : mode==="practice" ? "تمرین" : "آرنا";
+  setViewTitle(`${modeLabel}: ${lv.title}`);
+  setStatus("در حال بازی");
+  $("view").innerHTML = "";
+
+  const typeLabel =
+    lv.type==="fill" ? "پرکردن جاهای خالی" :
+    lv.type==="givenM" ? "ساختن مربع با عدد جادویی" :
+    lv.type==="guessM" ? "پیدا کردن عدد جادویی" :
+    lv.type==="fix" ? "اصلاح مربع خراب" :
+    lv.type==="symmetry" ? "چالش تقارن" :
+    lv.type==="code" ? "کدگذاری/جایگشت" :
+    "چالش ترکیبی";
+
+  const instructions =
+    lv.type==="fill" ? "خانه‌های خالی را با اعداد ۱..n² پر کن. هر عدد فقط یک‌بار. (هدف: دقیقاً مطابق پاسخ صحیح)"
+    : lv.type==="givenM" ? "با داشتن n و عدد جادویی، کل مربع را بساز (اعداد ۱..n² بدون تکرار)."
+    : lv.type==="guessM" ? "به مربع نگاه کن و عدد جادویی M را وارد کن."
+    : lv.type==="fix" ? "چند خانه جابه‌جا/غلط است. آن را اصلاح کن تا دقیقاً مربع صحیح شود."
+    : lv.type==="symmetry" ? "هدف: الگوی تقارن را کامل کن. (این مرحله همزمان با چیدمان عددی تمرین تقارن است.)"
+    : lv.type==="code" ? "بعد از تکمیل مربع، یک «کد» کوتاه از الگو می‌سازی و وارد می‌کنی."
+    : "هم پرکردن داریم هم اصلاح؛ تمرکز کامل!";
+
+  const wrap = el(`
+    <div class="hero">
+      <h3>${typeLabel} — ${n}×${n}</h3>
+      <p>${instructions}</p>
+
+      <div class="row" style="margin-top:12px">
+        <button id="btnCheck" class="primary">بررسی</button>
+        <button id="btnHint">راهنمایی</button>
+        <button id="btnClear">پاک کردن خانه انتخابی</button>
+        <button id="btnRestart">شروع دوباره</button>
+        <button id="btnExit">خروج</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">سختی: <b>×${lv.diff}</b></div>
+        <div class="stat">زمان: <b id="tSec">0s</b></div>
+        <div class="stat">حرکت‌ها: <b id="tMoves">0</b></div>
+        <div class="stat">اشتباه‌ها: <b id="tMist">0</b></div>
+        <div class="stat">راهنمایی: <b id="tHint">0</b></div>
+        <div class="stat">امتیاز موقت: <b id="tScore">0</b></div>
+      </div>
+
+      <div id="specialBox" style="display:none; margin-top:12px"></div>
+
+      <div class="gameWrap">
+        <div>
+          <div class="board" id="board"></div>
+          <div class="checks">
+            <div class="checkBox" id="chkRows"></div>
+            <div class="checkBox" id="chkCols"></div>
+          </div>
+          <div class="checkBox" style="margin-top:10px" id="chkDiags"></div>
+        </div>
+
+        <div class="side">
+          <h5>پالت</h5>
+          <div class="nums" id="nums"></div>
+          <div class="hint" id="sideHint"></div>
+          <div class="hint" style="margin-top:10px; border-top:1px solid rgba(255,255,255,.10); padding-top:10px">
+            عدد جادویی استاندارد: <span class="kbd">M = n(n²+1)/2</span><br>
+            برای این n: <span class="kbd">${magicConstant(n)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footerNote" id="foot"></div>
+    </div>
+  `);
+
+  $("view").appendChild(wrap);
+
+  // timer tick
+  const tSec = wrap.querySelector("#tSec");
+  timer.onTick = (s)=> tSec.textContent = `${s}s`;
+
+  // controls
+  wrap.querySelector("#btnRestart").addEventListener("click", ()=>{
+    if(mode==="campaign"){
+      const idx = LEVELS.findIndex(x=>x.id===game.level.id)+1;
+      startLevel(idx);
+    }else if(mode==="arena"){
+      // restart same arena challenge (doesn't change streak)
+      initGameFromLevel(game.level, "arena");
+      renderGameView("arena");
+    }else{
+      startCustomLevel(game.level, "practice");
+    }
+  });
+
+  wrap.querySelector("#btnExit").addEventListener("click", ()=>{
+    stopTimer();
+    if(mode==="campaign") renderCampaign();
+    else if(mode==="arena") renderArena();
+    else renderPractice();
+  });
+
+  wrap.querySelector("#btnClear").addEventListener("click", ()=> clearSelected(wrap));
+  wrap.querySelector("#btnCheck").addEventListener("click", ()=>{
+    if(game.type==="guessM") checkGuessM(wrap, mode);
+    else if(game.type==="code") checkCodePuzzle(wrap, mode);
+    else checkGrid(wrap, mode);
+  });
+
+  wrap.querySelector("#btnHint").addEventListener("click", ()=>{
+    if(game.level.hintLock){ toast("این مرحله راهنمایی را قفل کرده.", "warn"); return; }
+    if(game.type==="guessM"){ toast("در این مرحله راهنمایی لازم نیست.", "warn"); return; }
+    if(game.type==="code"){ toast("راهنمایی: کد از جمع چند خانه خاص ساخته می‌شود (پایین توضیح دارد).", "ok"); game.hints++; game.scoreRun -= 10; updateHUD(wrap); return; }
+    giveHint(wrap);
+  });
+
+  // side hint
+  const sideHint = wrap.querySelector("#sideHint");
+  if(game.type==="givenM"){
+    sideHint.innerHTML = `عدد جادویی مرحله: <span class="kbd">${game.M}</span><br>هدف: همه سطر/ستون/قطر جمعشان ${game.M} شود و اعداد ۱..n² تکرار نشوند.`;
+  }else if(game.type==="guessM"){
+    sideHint.innerHTML = `این مرحله فقط حدسِ M است. به جمع یک سطر نگاه کن!`;
+  }else if(game.type==="fix"){
+    sideHint.innerHTML = `چند خانه غلط است. هدف: دقیقاً مطابق مربع صحیح شود.`;
+  }else if(game.type==="symmetry"){
+    const kind = game.level.sym;
+    const kname = kind==="h" ? "تقارن افقی" : kind==="v" ? "تقارن عمودی" : "تقارن چرخشی ۱۸۰°";
+    sideHint.innerHTML = `هدف اصلی: <span class="kbd">${kname}</span> را کامل کن. (اعداد یک‌بار مصرف)`;
+  }else if(game.type==="code"){
+    // code rule: sum of four corners mod 100 + center mod 100 => code
+    sideHint.innerHTML = `
+      قانون کُد: <span class="kbd">CODE</span> = (جمع ۴ گوشه + عدد مرکز) mod 100<br>
+      بعد از کامل شدن، کد را وارد کن.
+    `;
+  }else{
+    sideHint.innerHTML = `اعداد را بکش و رها کن. هر عدد فقط یک‌بار استفاده می‌شود.`;
+  }
+
+  // special box for guessM / code
+  if(game.type==="guessM"){
+    const sb = wrap.querySelector("#specialBox");
+    sb.style.display="block";
+    sb.innerHTML = `
+      <div class="card">
+        <h4>حدس عدد جادویی</h4>
+        <p style="margin-bottom:10px">M را وارد کن. (مثال: ۶×۶ → ۱۱۱)</p>
+        <div class="row">
+          <input id="guessInput" type="number" placeholder="عدد جادویی (M)" />
+          <button id="guessBtn" class="primary">ثبت حدس</button>
+        </div>
+        <div class="hint" id="guessMsg"></div>
+      </div>
+    `;
+    sb.querySelector("#guessBtn").addEventListener("click", ()=>checkGuessM(wrap, mode));
+  }
+
+  if(game.type==="code"){
+    const sb = wrap.querySelector("#specialBox");
+    sb.style.display="block";
+    sb.innerHTML = `
+      <div class="card">
+        <h4>ورود کُد</h4>
+        <p style="margin-bottom:10px">
+          وقتی مربع کامل شد، کُد را طبق قانون بساز و وارد کن.
+        </p>
+        <div class="row">
+          <input id="codeInput" type="number" placeholder="CODE (0 تا 99)" />
+          <button id="codeBtn" class="primary">ثبت کد</button>
+        </div>
+        <div class="hint" id="codeMsg"></div>
+      </div>
+    `;
+    sb.querySelector("#codeBtn").addEventListener("click", ()=>checkCodePuzzle(wrap, mode));
+  }
+
+  // render board/palette
+  renderBoard(wrap);
+  renderPalette(wrap);
+  updateChecks(wrap);
+  updateHUD(wrap);
+
+  // footer
+  wrap.querySelector("#foot").innerHTML = `
+    امتیاز پایه: <span class="kbd">${baseScoreForLevel(game.level)}</span> •
+    سقف پاداش سرعت: <span class="kbd">${speedBonusCap(game.level)}</span> •
+    هر راهنمایی: <span class="kbd">-35</span> • هر اشتباه: <span class="kbd">-10</span>
+    ${mode==="arena" ? `<br>آرنا: Run=<span class="kbd">${arenaState.runScore}</span> • Streak=<span class="kbd">${arenaState.streak}</span>` : ""}
+  `;
+}
+
+function renderBoard(root){
+  const board = root.querySelector("#board");
+  const n = game.n;
+  board.style.gridTemplateColumns = `repeat(${n}, 64px)`;
+  board.innerHTML = "";
+
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const idx = i*n+j;
+      const locked = game.locked.has(idx);
+      const val = game.grid[i][j];
+      const node = el(`<div class="cell ${locked?'locked':''}">${val==null?'':val}</div>`);
+
+      node.addEventListener("click", ()=>{
+        game.selected = {i,j};
+        root.querySelectorAll(".cell").forEach(c=>c.classList.remove("sel"));
+        node.classList.add("sel");
+      });
+
+      if(game.type!=="guessM" && !locked){
+        node.addEventListener("dragover",(e)=>e.preventDefault());
+        node.addEventListener("drop",(e)=>{
+          e.preventDefault();
+          const v = Number(e.dataTransfer.getData("text/plain"));
+          place(i,j,v, root);
+        });
+      }
+      board.appendChild(node);
+    }
+  }
+}
+function renderPalette(root){
+  const nums = root.querySelector("#nums");
+  nums.innerHTML = "";
+
+  if(game.type==="guessM"){
+    nums.innerHTML = `<div class="hint">در این مرحله پالت لازم نیست.</div>`;
+    return;
+  }
+
+  const n = game.n;
+  const used = usedNumbers();
+  const max = n*n;
+
+  // برای n بزرگ‌تر از 6، پالت خیلی بزرگ می‌شود؛ ولی هنوز کار می‌کند.
+  for(let v=1; v<=max; v++){
+    const node = el(`<div class="num ${used.has(v)?'used':''}" draggable="${!used.has(v)}">${v}</div>`);
+    if(!used.has(v)){
+      node.addEventListener("dragstart", (e)=> e.dataTransfer.setData("text/plain", String(v)));
+    }
+    nums.appendChild(node);
+  }
+}
+function place(i,j,v, root){
+  const n = game.n;
+  const idx = i*n+j;
+  if(game.locked.has(idx)) return;
+
+  const used = usedNumbers();
+  if(used.has(v) && game.grid[i][j]!==v){
+    toast("این عدد قبلاً استفاده شده.", "warn");
+    return;
+  }
+
+  game.grid[i][j] = v;
+  game.moves += 1;
+
+  if(game.type==="givenM"){
+    game.scoreRun += 1;
+  }else if(game.type==="symmetry"){
+    // reward if matches required symmetry target (based on solution symmetry)
+    const ok = symmetryCellOk(i,j,v);
+    game.scoreRun += ok ? 5 : -2;
+  }else{
+    // default compare to our internal solution (fill/fix/mix/code)
+    if(v === game.sol[i][j]) game.scoreRun += 6;
+    else game.scoreRun -= 2;
+  }
+
+  renderBoard(root);
+  renderPalette(root);
+  updateChecks(root);
+  updateHUD(root);
+}
+function clearSelected(root){
+  if(game.type==="guessM"){ toast("این مرحله خانه‌ای برای پاک کردن ندارد.", "warn"); return; }
+  if(!game.selected){ toast("اول یک خانه را انتخاب کن.", "warn"); return; }
+  const {i,j} = game.selected;
+  const idx = i*game.n+j;
+  if(game.locked.has(idx)) { toast("این خانه قفل است.", "warn"); return; }
+  if(game.grid[i][j]==null) return;
+
+  game.grid[i][j]=null;
+  game.moves += 1;
+  game.scoreRun -= 3;
+
+  renderBoard(root);
+  renderPalette(root);
+  updateChecks(root);
+  updateHUD(root);
+}
+
+/* =========================
+   Checks
+========================= */
+function updateChecks(root){
+  const n = game.n;
+  const M = game.M;
+
+  const cur = game.grid.map(r=>r.map(v=>v==null?0:v));
+  const rep = sumsReport(cur);
+
+  const chkRows = root.querySelector("#chkRows");
+  const chkCols = root.querySelector("#chkCols");
+  const chkDiags = root.querySelector("#chkDiags");
+
+  const rowLines = rep.row.map((s,i)=>{
+    const filled = !game.grid[i].some(v=>v==null);
+    if(!filled) return `سطر ${i+1}: — (ناقص)`;
+    return `سطر ${i+1}: ${s} ${s===M?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}`;
+  }).join("<br>");
+
+  const colLines = rep.col.map((s,j)=>{
+    const filled = !game.grid.some(row=>row[j]==null);
+    if(!filled) return `ستون ${j+1}: — (ناقص)`;
+    return `ستون ${j+1}: ${s} ${s===M?'<span class="ok">✓</span>':'<span class="bad">✗</span>'}`;
+  }).join("<br>");
+
+  const diagFilled1 = !game.grid.some((row,i)=>row[i]==null);
+  const diagFilled2 = !game.grid.some((row,i)=>row[n-1-i]==null);
+
+  chkRows.innerHTML = `<b>سطرها</b><br>${rowLines}`;
+  chkCols.innerHTML = `<b>ستون‌ها</b><br>${colLines}`;
+  chkDiags.innerHTML =
+    `<b>قطرها</b><br>
+     قطر اصلی: ${diagFilled1 ? rep.d1 : "— (ناقص)"} ${diagFilled1 ? (rep.d1===M?'<span class="ok">✓</span>':'<span class="bad">✗</span>') : ""}<br>
+     قطر فرعی: ${diagFilled2 ? rep.d2 : "— (ناقص)"} ${diagFilled2 ? (rep.d2===M?'<span class="ok">✓</span>':'<span class="bad">✗</span>') : ""}`;
+
+  // Note: در symmetry/code ممکن است M هدف اصلی نباشد، ولی نمایش جمع‌ها هنوز آموزنده است.
+}
+
+/* =========================
+   Symmetry helper
+========================= */
+function symmetryCellOk(i,j,v){
+  const n = game.n;
+  const kind = game.level.sym || "h";
+  const sol = game.sol;
+
+  let ti=i, tj=j;
+  if(kind==="h"){ ti = (n-1-i); tj=j; }
+  else if(kind==="v"){ ti=i; tj=(n-1-j); }
+  else { ti=(n-1-i); tj=(n-1-j); } // rot180
+
+  // The "target" is the solution value at symmetric position
+  // We want player's v to equal that value if they are filling that cell
+  return v === sol[i][j] || v === sol[ti][tj];
+}
+
+/* =========================
+   Hint
+========================= */
+function giveHint(root){
+  const n = game.n;
+
+  if(game.type==="givenM"){
+    game.hints += 1;
+    game.scoreRun -= 10;
+    updateHUD(root);
+    toast("راهنمایی: یک سطر را کامل کن و جمع آن را با M چک کن؛ سپس سراغ ستون‌های متقاطع برو.", "ok");
+    return;
+  }
+
+  const candidates = [];
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      const idx = i*n+j;
+      if(game.locked.has(idx)) continue;
+      if(game.grid[i][j]==null || game.grid[i][j] !== game.sol[i][j]) candidates.push([i,j]);
+    }
+  }
+  if(candidates.length===0){
+    toast("فعلاً نیازی به راهنمایی نیست.", "warn");
+    return;
+  }
+
+  const [i,j] = candidates[Math.floor(Math.random()*candidates.length)];
+  const target = game.sol[i][j];
+
+  // clear duplicate if exists elsewhere and not locked
+  for(let r=0;r<n;r++){
+    for(let c=0;c<n;c++){
+      if(game.grid[r][c]===target && !(r===i && c===j)){
+        const idx = r*n+c;
+        if(!game.locked.has(idx)) game.grid[r][c]=null;
+      }
+    }
+  }
+
+  game.grid[i][j] = target;
+  game.hints += 1;
+  game.moves += 1;
+  game.scoreRun -= 8;
+
+  renderBoard(root);
+  renderPalette(root);
+  updateChecks(root);
+  updateHUD(root);
+
+  toast("یک خانه درست شد ✅", "ok");
+}
+
+/* =========================
+   Check logic
+========================= */
+function checkGuessM(root, mode){
+  const input = root.querySelector("#guessInput");
+  const msg = root.querySelector("#guessMsg");
+  const v = Number(input?.value);
+  if(!Number.isFinite(v)){
+    toast("یک عدد معتبر برای M وارد کن.", "warn");
+    return;
+  }
+  if(v === game.M){
+    msg.innerHTML = `<span class="ok">درست ✅</span> — M = ${game.M}`;
+    win(mode);
+  }else{
+    msg.innerHTML = `<span class="bad">اشتباه ❌</span> — دوباره تلاش کن.`;
+    game.mistakes += 1;
+    updateHUD(root);
+    toast("حدس اشتباه بود.", "bad");
+  }
+}
+
+function checkCodePuzzle(root, mode){
+  // prerequisite: grid must be fully filled and be the correct solution (برای این مرحله)
+  const n = game.n;
+  const allFilled = game.grid.every(r=>r.every(v=>v!=null));
+  if(!allFilled){
+    toast("اول مربع را کامل کن.", "warn");
+    game.mistakes += 1; updateHUD(root);
+    return;
+  }
+  // must match solution
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      if(game.grid[i][j] !== game.sol[i][j]){
+        toast("برای ساخت کُد، مربع باید درستِ درست باشد.", "bad");
+        game.mistakes += 1; updateHUD(root);
+        return;
+      }
+    }
+  }
+  const corners = game.grid[0][0] + game.grid[0][n-1] + game.grid[n-1][0] + game.grid[n-1][n-1];
+  const center = game.grid[Math.floor(n/2)][Math.floor(n/2)];
+  const code = (corners + center) % 100;
+
+  const input = root.querySelector("#codeInput");
+  const msg = root.querySelector("#codeMsg");
+  const v = Number(input?.value);
+
+  if(!Number.isFinite(v)){
+    toast("کد را به صورت عدد وارد کن.", "warn");
+    return;
+  }
+  if(v === code){
+    msg.innerHTML = `<span class="ok">کُد درست ✅</span> — CODE = ${code}`;
+    game.scoreRun += 60;
+    win(mode);
+  }else{
+    msg.innerHTML = `<span class="bad">کُد غلط ❌</span> — دوباره حساب کن.`;
+    game.mistakes += 1;
+    updateHUD(root);
+    toast(`کد اشتباه بود.`, "bad");
+  }
+}
+
+function checkGrid(root, mode){
+  const n = game.n;
+
+  if(game.type==="symmetry"){
+    // Win if filled AND respects symmetry relative to solution
+    const allFilled = game.grid.every(r=>r.every(v=>v!=null));
+    if(!allFilled){
+      toast("هنوز خانه‌های خالی داری.", "warn");
+      game.mistakes += 1; updateHUD(root);
+      return;
+    }
+    // check symmetry pairwise
+    const kind = game.level.sym || "h";
+    for(let i=0;i<n;i++){
+      for(let j=0;j<n;j++){
+        let ti=i, tj=j;
+        if(kind==="h"){ ti=(n-1-i); tj=j; }
+        else if(kind==="v"){ ti=i; tj=(n-1-j); }
+        else { ti=(n-1-i); tj=(n-1-j); }
+        // require that values are consistent with solution symmetry mapping
+        // easiest: require both positions equal to their solution positions
+        if(game.grid[i][j]!==game.sol[i][j] || game.grid[ti][tj]!==game.sol[ti][tj]){
+          toast("تقارن/الگو هنوز کامل نیست.", "bad");
+          game.mistakes += 1; updateHUD(root);
+          return;
+        }
+      }
+    }
+    win(mode);
+    return;
+  }
+
+  if(game.type==="givenM"){
+    const allFilled = game.grid.every(r=>r.every(v=>v!=null));
+    if(!allFilled){
+      toast("هنوز خانه‌های خالی داری.", "warn");
+      game.mistakes += 1; updateHUD(root);
+      return;
+    }
+    const seen = new Set();
+    for(const row of game.grid){
+      for(const v of row){
+        if(v<1 || v>n*n || seen.has(v)){
+          toast("اعداد باید دقیقاً ۱ تا n² و بدون تکرار باشند.", "bad");
+          game.mistakes += 1; updateHUD(root);
+          return;
+        }
+        seen.add(v);
+      }
+    }
+    const rep = sumsReport(game.grid);
+    if(rep.ok) win(mode);
+    else{
+      toast("جمع‌ها درست نیستند. حداقل یک خط مشکل دارد.", "bad");
+      game.mistakes += 1; updateHUD(root);
+    }
+    return;
+  }
+
+  // fill/fix/mix/code: must match solution exactly
+  const allFilled = game.grid.every(r=>r.every(v=>v!=null));
+  if(!allFilled){
+    toast("هنوز خانه‌های خالی داری.", "warn");
+    game.mistakes += 1; updateHUD(root);
+    return;
+  }
+  for(let i=0;i<n;i++){
+    for(let j=0;j<n;j++){
+      if(game.grid[i][j] !== game.sol[i][j]){
+        toast("هنوز درست نشده. چند خانه اشتباه است.", "bad");
+        game.mistakes += 1; updateHUD(root);
+        return;
+      }
+    }
+  }
+  win(mode);
+}
+
+function updateHUD(root){
+  root.querySelector("#tMoves").textContent = String(game.moves);
+  root.querySelector("#tMist").textContent = String(game.mistakes);
+  root.querySelector("#tHint").textContent = String(game.hints);
+  root.querySelector("#tScore").textContent = String(Math.round(game.scoreRun));
+}
+
+/* =========================
+   Win / Save / Unlock / Arena progress
+========================= */
+function win(mode){
+  if(game.finished) return;
+  game.finished = true;
+  stopTimer();
+  setStatus("تمام شد ✅");
+
+  const isPractice = (mode==="practice");
+  const isArena = (mode==="arena");
+  const isCampaign = (mode==="campaign");
+
+  const result = finalizeScore(isPractice);
+  const lv = game.level;
+
+  const medal = medalForResult(lv, result);
+  const medalText = medalLabel(medal);
+
+  const root = $("view").querySelector(".hero");
+
+  const arenaExtra = isArena ? `
+    <div class="pillRow">
+      <div class="pill">Streak فعلی: <strong>${arenaState.streak}</strong></div>
+      <div class="pill">Run فعلی: <strong>${arenaState.runScore}</strong></div>
+    </div>
+  ` : "";
+
+  root.appendChild(el(`
+    <div class="card" style="margin-top:12px">
+      <h4>نتیجه</h4>
+      <p>
+        مدال: <span class="kbd">${medalText}</span><br>
+        امتیاز پایه: <span class="kbd">${result.base}</span> • سختی: <span class="kbd">×${result.diff}</span><br>
+        پاداش سرعت: <span class="kbd">${result.speed}</span> • امتیاز حرکت‌ها: <span class="kbd">${result.run}</span><br>
+        جریمه‌ها: <span class="kbd">-${result.penalties}</span><br><br>
+        <b style="color:var(--gold)">امتیاز نهایی: ${result.total}</b><br>
+        زمان: <span class="kbd">${result.seconds}s</span> • حرکت‌ها: <span class="kbd">${game.moves}</span>
+      </p>
+      ${arenaExtra}
+      <div class="row" style="margin-top:10px">
+        <button id="btnNext" class="primary">${isArena ? "چالش بعدی" : isCampaign ? "مرحله بعد" : "تمرین جدید"}</button>
+        <button id="btnBack">${isArena ? "پایان Run" : "بازگشت"}</button>
+      </div>
+    </div>
+  `));
+
+  // Save logic
+  if(isCampaign){
+    save.totalScore += result.total;
+
+    const prevBest = save.best[lv.id];
+    if(prevBest==null || result.total > prevBest) save.best[lv.id] = result.total;
+
+    // best medal logic: gold > silver > bronze
+    const rank = {bronze:1,silver:2,gold:3};
+    const prevMed = save.medals[lv.id];
+    if(!prevMed || rank[medal] > rank[prevMed]) save.medals[lv.id] = medal;
+
+    const idx = LEVELS.findIndex(x=>x.id===lv.id);
+    const currentIndex = idx+1;
+
+    // unlock next if allowed by quiz gates
+    if(save.unlocked === currentIndex && currentIndex < LEVELS.length){
+      save.unlocked = currentIndex + 1;
+      toast("مرحله بعدی باز شد! 🔓", "ok");
+    }
+
+    saveNow();
+  }
+
+  if(isArena){
+    // apply streak multiplier
+    const mult = 1 + 0.06*arenaState.streak;
+    const gained = Math.round(result.total * mult);
+    arenaState.runScore += gained;
+    arenaState.streak += 1;
+
+    // persist bests
+    if(arenaState.runScore > save.arena.bestRun) save.arena.bestRun = arenaState.runScore;
+    if(arenaState.streak > save.arena.bestStreak) save.arena.bestStreak = arenaState.streak;
+    saveNow();
+
+    toast(`آرنا: +${gained} امتیاز (ضریب ${mult.toFixed(2)})`, "ok");
+  }
+
+  // Buttons
+  root.querySelector("#btnBack").addEventListener("click", ()=>{
+    if(isArena){
+      // finish run and add to totalScore as a reward
+      const cashOut = Math.round(arenaState.runScore * 0.35);
+      if(cashOut>0){
+        save.totalScore += cashOut;
+        saveNow();
+        toast(`پایان Run: +${cashOut} امتیاز به امتیاز کل`, "ok");
+      }
+      arenaState = { active:false, runScore:0, streak:0, seed:0 };
+      renderArena();
+    }else{
+      if(isPractice) renderPractice();
+      else renderCampaign();
+    }
+  });
+
+  root.querySelector("#btnNext").addEventListener("click", ()=>{
+    if(isArena){
+      startNextArenaChallenge();
+      return;
+    }
+    if(isPractice){
+      renderPractice();
+      return;
+    }
+    // campaign next
+    const idx = LEVELS.findIndex(x=>x.id===lv.id);
+    if(idx < LEVELS.length-1){
+      const nextIndex = idx+2;
+
+      // check gate
+      const gate = gateForLevel(nextIndex);
+      if(gate){
+        toast(`قبل از ادامه باید ${gate} را پاس کنی.`, "warn");
+        renderQuizzes();
+        renderQuiz(gate);
+        return;
+      }
+
+      startLevel(nextIndex);
+    }else{
+      renderCampaign();
+    }
+  });
+}
+
+/* =========================
+   Reset
+========================= */
+function resetAll(){
+  localStorage.removeItem(SAVE_KEY);
+  save = loadSave();
+  syncTopChips();
+  toast("همه چیز ریست شد.", "warn");
+  renderCampaign();
+}
+
+/* =========================
+   Top controls
+========================= */
+$("btnCampaign").addEventListener("click", renderCampaign);
+$("btnLesson").addEventListener("click", renderLesson);
+$("btnQuizzes").addEventListener("click", renderQuizzes);
+$("btnArena").addEventListener("click", renderArena);
+$("btnPractice").addEventListener("click", renderPractice);
+$("btnFuture").addEventListener("click", renderFuture);
+$("btnReset").addEventListener("click", resetAll);
+
+/* =========================
+   Boot
+========================= */
+renderCampaign();
+</script>
+</body>
+</html>19:43 23/02/202619:43 23/02/2026
